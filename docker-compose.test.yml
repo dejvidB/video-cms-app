@@ -1,0 +1,60 @@
+services:
+    mysql_test:
+        image: mysql:8
+        restart: always
+        container_name: mysql_test
+        environment:
+            MYSQL_DATABASE: videocms
+            MYSQL_ROOT_PASSWORD: root
+        ports:
+            - "3307:3307"
+        volumes:
+            - ./docker/mysql:/docker-entrypoint-initdb.d
+        healthcheck:
+            test: ["CMD", "mysqladmin", "ping", "-p1234", "--protocol", "tcp"]
+            interval: 0.5s
+            timeout: 45s
+            retries: 80
+
+    redis_test:
+        image: redis:alpine
+        healthcheck:
+            test: [ "CMD", "redis-cli", "ping" ]
+            interval: 5s
+            timeout: 3s
+            retries: 10
+        ports:
+            - "6380:6379"
+
+    elasticsearch_test:
+        image: docker.elastic.co/elasticsearch/elasticsearch:8.11.1
+        environment:
+            - discovery.type=single-node
+            - xpack.security.enabled=false
+            - ES_JAVA_OPTS=-Xms512m -Xmx512m
+        ports:
+            - "9201:9200"
+        networks:
+            - default
+        healthcheck:
+            test: ["CMD", "curl", "-f", "http://localhost:9200"]
+            interval: 10s
+            timeout: 5s
+            retries: 10
+
+    phpunit:
+        build:
+            context: .
+            dockerfile: ./docker/tests/Dockerfile
+        container_name: phpunit_runner
+        depends_on:
+            mysql_test:
+                condition: service_healthy
+            redis_test:
+                condition: service_healthy
+            elasticsearch_test:
+                condition: service_healthy
+        volumes:
+            - .:/app
+        working_dir: /app
+        command: vendor/bin/phpunit --testsuite integration
