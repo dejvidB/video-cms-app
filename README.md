@@ -20,6 +20,8 @@ A simple, modular, and testable PHP application that demonstrates the architectu
 - 📈 **Redis** – Tracks views and trending videos
 - 🧪 **Test Suite** – PHPUnit with full unit & integration tests
 
+---
+
 ## ⚙️ Getting Started
 
 ### 1. Clone the project
@@ -73,6 +75,26 @@ All tests run inside an **isolated test container** and clean up afterward.
 | GET    | `/videos/trending`   | List most viewed videos         |
 
 All endpoints return JSON responses.
+
+---
+
+## 🧵 Running the Background Worker
+
+To simulate video processing (e.g. encoding), the app uses a background job processor with RabbitMQ.
+
+### 🔁 Start the worker:
+
+```bash
+php worker.php
+```
+
+The worker will:
+
+- Listen for jobs on the `video_jobs` queue
+- Simulate video processing with a short delay
+- Update the video's status in the database to `"ready"`
+
+Make sure your services are up with `docker compose up` **before running the worker**.
 
 ---
 
